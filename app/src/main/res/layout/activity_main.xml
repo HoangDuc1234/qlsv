@@ -15,17 +15,18 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:padding="16dp"
-        android:scrollbars="vertical"/>
+        android:padding="8dp"
+        android:scrollbars="vertical"
+        android:layoutAnimation="@anim/layout_animation"
+        android:clipToPadding="false"/>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <Button
         android:id="@+id/btnAdd"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="@color/blue"
+        android:text="Thêm sinh viên"
+        android:background="@color/blue"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="16dp"
-        android:contentDescription="Thêm sinh viên"/>
+        android:layout_margin="16dp"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

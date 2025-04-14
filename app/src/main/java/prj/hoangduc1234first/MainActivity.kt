@@ -1,16 +1,18 @@
 package prj.hoangduc1234first
 
+import android.app.Activity
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.EditText
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import android.app.AlertDialog
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import android.widget.Button
+import prj.hoangduc1234first.R
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : Activity() {
     private lateinit var studentAdapter: StudentAdapter
     private val studentList = mutableListOf<Student>()
 
@@ -19,13 +21,58 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
-        val btnAdd = findViewById<FloatingActionButton>(R.id.btnAdd)
+        val btnAdd = findViewById<Button>(R.id.btnAdd)
 
-        studentAdapter = StudentAdapter(studentList) { position -> showDeleteDialog(position) }
+        setupRecyclerView(recyclerView)
+        btnAdd.setOnClickListener { showAddStudentDialog() }
+    }
+
+    private fun setupRecyclerView(recyclerView: RecyclerView) {
+        studentAdapter = StudentAdapter { position -> showDeleteDialog(position) }
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = studentAdapter
+        recyclerView.itemAnimator = CustomItemAnimator()
 
-        btnAdd.setOnClickListener { showAddStudentDialog() }
+        // Submit initial list
+        studentAdapter.submitList(studentList.toList())
+
+        // Setup swipe to delete
+        setupSwipeToDelete(recyclerView)
+    }
+
+    private fun setupSwipeToDelete(recyclerView: RecyclerView) {
+        val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(
+            0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                return false
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                val deletedStudent = studentAdapter.currentList[position]
+
+                // Create a new list without the swiped item
+                val newList = studentAdapter.currentList.toMutableList()
+                newList.removeAt(position)
+
+                // Update the adapter
+                studentAdapter.submitList(newList)
+
+                // Show toast notification
+                Toast.makeText(
+                    this@MainActivity,
+                    "Đã xóa ${deletedStudent.name}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+
+        ItemTouchHelper(itemTouchHelperCallback).attachToRecyclerView(recyclerView)
     }
 
     private fun showAddStudentDialog() {
@@ -33,32 +80,44 @@ class MainActivity : AppCompatActivity() {
         val etName = dialogView.findViewById<EditText>(R.id.etName)
         val etMSSV = dialogView.findViewById<EditText>(R.id.etMSSV)
 
-        AlertDialog.Builder(this)
-            .setTitle("Thêm Sinh Viên")
-            .setView(dialogView)
-            .setPositiveButton("Thêm") { _, _ ->
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Thêm Sinh Viên")
+        builder.setView(dialogView)
+        builder.setPositiveButton("Thêm") { _, _ ->
                 val name = etName.text.toString()
                 val mssv = etMSSV.text.toString()
                 if (name.isNotEmpty() && mssv.isNotEmpty()) {
-                    studentList.add(0, Student(name, mssv))
-                    studentAdapter.notifyItemInserted(0)
+                    // Create a new list with the new student at the beginning
+                    val newList = studentAdapter.currentList.toMutableList()
+                    newList.add(0, Student(name, mssv))
+                    studentAdapter.submitList(newList)
+
+                    // Update our local list for future reference
+                    studentList.clear()
+                    studentList.addAll(newList)
                 } else {
                     Toast.makeText(this, "Vui lòng nhập đủ thông tin!", Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("Hủy", null)
-            .show()
+        builder.setNegativeButton("Hủy", null)
+        builder.show()
     }
 
     private fun showDeleteDialog(position: Int) {
-        AlertDialog.Builder(this)
-            .setTitle("Xóa sinh viên")
-            .setMessage("Bạn có chắc muốn xóa sinh viên này?")
-            .setPositiveButton("Xóa") { _, _ ->
-                studentList.removeAt(position)
-                studentAdapter.notifyItemRemoved(position)
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Xóa sinh viên")
+        builder.setMessage("Bạn có chắc muốn xóa sinh viên này?")
+        builder.setPositiveButton("Xóa") { _, _ ->
+                // Create a new list without the deleted student
+                val newList = studentAdapter.currentList.toMutableList()
+                newList.removeAt(position)
+                studentAdapter.submitList(newList)
+
+                // Update our local list for future reference
+                studentList.clear()
+                studentList.addAll(newList)
             }
-            .setNegativeButton("Hủy", null)
-            .show()
+        builder.setNegativeButton("Hủy", null)
+        builder.show()
     }
 }
